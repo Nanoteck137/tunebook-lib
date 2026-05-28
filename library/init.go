@@ -112,7 +112,7 @@ func getTrackInfo(p string) (trackInfo, error) {
 }
 
 func InitializeAlbum(dir string) error {
-	metadata := AlbumMetadata{}
+	metadata := Album{}
 
 	extract := true
 
@@ -219,7 +219,7 @@ func InitializeAlbum(dir string) error {
 		// TODO(patrik): If artist is empty then use album maybe
 		artists := parseArtist(trackInfo.Artist)
 
-		metadata.Tracks = append(metadata.Tracks, AlbumMetadataTrack{
+		metadata.Tracks = append(metadata.Tracks, AlbumTrack{
 			Id:      utils.CreateTrackId(),
 			File:    filename,
 			Name:    trackInfo.Name,
@@ -277,7 +277,7 @@ func InitializeArtist(dir string, params InitializeArtistParams) error {
 		cover = p
 	}
 
-	metadata := ArtistMetadata{
+	metadata := Artist{
 		Id:         utils.CreateArtistId(),
 		SearchName: utils.Slug(params.ArtistName),
 		Name:       params.ArtistName,
@@ -291,7 +291,7 @@ func InitializeArtist(dir string, params InitializeArtistParams) error {
 	}
 
 	// TODO(patrik): Move to constant
-	p := path.Join(dir, "artist.toml")
+	p := path.Join(dir, artistFilename)
 	err = os.WriteFile(p, d, 0644)
 	if err != nil {
 		return fmt.Errorf("init artist: write file: %w", err)
@@ -301,7 +301,7 @@ func InitializeArtist(dir string, params InitializeArtistParams) error {
 }
 
 func InitializeLibrary(dir string) error {
-	metadata := LibraryMetadata{}
+	metadata := LibraryConfig{}
 
 	d, err := toml.Marshal(metadata)
 	if err != nil {

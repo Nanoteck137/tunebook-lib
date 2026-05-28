@@ -57,14 +57,14 @@ func transformTagsArr(tags []string) []string {
 	return dedupStringArr(tags)
 }
 
-func processArtistMetadata(metadata *ArtistMetadata) {
-	metadata.Name = anvil.String(metadata.Name)
-	metadata.SearchName = utils.Slug(metadata.SearchName)
+func processArtistMetadata(artist *Artist) {
+	artist.Name = anvil.String(artist.Name)
+	artist.SearchName = utils.Slug(artist.SearchName)
 
-	metadata.Tags = transformTagsArr(metadata.Tags)
+	artist.Tags = transformTagsArr(artist.Tags)
 }
 
-func processAlbumMetadata(metadata *AlbumMetadata) {
+func processAlbumMetadata(metadata *Album) {
 	album := &metadata.Album
 
 	album.Name = anvil.String(album.Name)
@@ -95,11 +95,11 @@ func processAlbumMetadata(metadata *AlbumMetadata) {
 	}
 }
 
-func ReadLibraryMetadata(dir string) (LibraryMetadata, error) {
-	var res LibraryMetadata
+func ReadLibraryConfig(dir string) (LibraryConfig, error) {
+	var res LibraryConfig
 
 	p := filepath.Join(dir, libraryMetadataFilename)
-	res, err := utils.ReadToml[LibraryMetadata](p)
+	res, err := utils.ReadToml[LibraryConfig](p)
 	if err == nil {
 		res.Path = dir
 		return res, nil
@@ -108,12 +108,12 @@ func ReadLibraryMetadata(dir string) (LibraryMetadata, error) {
 	if errors.Is(err, os.ErrNotExist) {
 		p, err := FindFile(dir, libraryMetadataFilename)
 		if err != nil {
-			return LibraryMetadata{}, err
+			return LibraryConfig{}, err
 		}
 
-		res, err := utils.ReadJson[LibraryMetadata](p)
+		res, err := utils.ReadJson[LibraryConfig](p)
 		if err != nil {
-			return LibraryMetadata{}, err
+			return LibraryConfig{}, err
 		}
 
 		res.Path = filepath.Dir(p)
@@ -121,7 +121,7 @@ func ReadLibraryMetadata(dir string) (LibraryMetadata, error) {
 		return res, nil
 	}
 
-	return LibraryMetadata{}, err
+	return LibraryConfig{}, err
 }
 
 // TODO(patrik): Move to utils
@@ -147,8 +147,8 @@ func FindFile(dir, filename string) (string, error) {
 }
 
 type fetchResult struct {
-	artists []ArtistMetadata
-	albums  []AlbumMetadata
+	artists []Artist
+	albums  []Album
 }
 
 func checkIfExcluded(relPath string, excludeDirs []string) bool {
@@ -167,8 +167,8 @@ func checkIfExcluded(relPath string, excludeDirs []string) bool {
 
 func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, error) {
 	res := &fetchResult{
-		artists: []ArtistMetadata{},
-		albums:  []AlbumMetadata{},
+		artists: []Artist{},
+		albums:  []Album{},
 	}
 
 	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
@@ -197,7 +197,7 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 
 		switch name {
 		case artistMetadataFilename:
-			artist, err := utils.ReadToml[ArtistMetadata](p)
+			artist, err := utils.ReadToml[Artist](p)
 			if err != nil {
 				reporter.AddWarning(p, fmt.Errorf("failed to read artist: %w", err))
 				return nil
@@ -211,7 +211,7 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 			artist.Path = p
 			res.artists = append(res.artists, artist)
 		case albumMetadataFilename:
-			album, err := utils.ReadToml[AlbumMetadata](p)
+			album, err := utils.ReadToml[Album](p)
 			if err != nil {
 				reporter.AddWarning(p, fmt.Errorf("failed to read album: %w", err))
 				return nil
@@ -235,7 +235,7 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 	return res, nil
 }
 
-func validateArtistMetadata(artist *ArtistMetadata, reporter *Reporter) bool {
+func validateArtistMetadata(artist *Artist, reporter *Reporter) bool {
 	file := filepath.Join(artist.Path, artistMetadataFilename)
 
 	valid := true
@@ -271,7 +271,7 @@ func validateArtistMetadata(artist *ArtistMetadata, reporter *Reporter) bool {
 	return valid
 }
 
-func validateAlbumMetadata(album *AlbumMetadata, reporter *Reporter) bool {
+func validateAlbumMetadata(album *Album, reporter *Reporter) bool {
 	file := filepath.Join(album.Path, albumMetadataFilename)
 
 	valid := true
@@ -306,7 +306,7 @@ func validateAlbumMetadata(album *AlbumMetadata, reporter *Reporter) bool {
 	return valid
 }
 
-func validateTrackMetadata(prefix, file string, track *AlbumMetadataTrack, reporter *Reporter) bool {
+func validateTrackMetadata(prefix, file string, track *AlbumTrack, reporter *Reporter) bool {
 	valid := true
 
 	if track.Id == "" {
@@ -393,17 +393,8 @@ type Library struct {
 }
 
 func (lib *Library) WriteToDisk() error {
-	libraryPath := filepath.Join(lib.Path, ".library")
-
-	err := utils.CreateDirectories([]string{
-		libraryPath,
-	})
-	if err != nil {
-		return fmt.Errorf("mkdir for library: %w", err)
-	}
-
 	openLib := func(name string) (*os.File, error) {
-		p := filepath.Join(libraryPath, name)
+		p := filepath.Join(lib.Path, name)
 		libFile, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return nil, err
@@ -455,13 +446,13 @@ func (lib *Library) WriteToDisk() error {
 }
 
 func ProcessMusicLibrary(dir string) (*Library, error) {
-	libraryMetadata, err := ReadLibraryMetadata(dir)
+	libraryConfig, err := ReadLibraryConfig(dir)
 	if err != nil {
 		return nil, err
 	}
 
 	lib := &Library{
-		Path: libraryMetadata.Path,
+		Path: libraryConfig.Path,
 		Reporter: Reporter{
 			// TODO(patrik): Rename errors to reports
 			Errors: map[string][]Report{},
@@ -478,7 +469,7 @@ func ProcessMusicLibrary(dir string) (*Library, error) {
 
 	fmt.Println("fetching files...")
 
-	fetched, err := fetch(lib.Path, libraryMetadata.ExcludedDirs, &lib.Reporter)
+	fetched, err := fetch(lib.Path, libraryConfig.ExcludedDirs, &lib.Reporter)
 	if err != nil {
 		return nil, fmt.Errorf("dir walk: %w", err)
 	}
@@ -503,7 +494,7 @@ func ProcessMusicLibrary(dir string) (*Library, error) {
 			if exists {
 				lib.Reporter.AddError(artist.Path, fmt.Errorf("duplicate artist: '%s' already exists with id '%s'", artist.Name, id))
 				continue
-			} 
+			}
 
 			artistMap[artist.SearchName] = artist.Id
 

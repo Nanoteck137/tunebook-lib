@@ -1,59 +1,57 @@
 package library
 
-// TODO(patrik): Move?
 const (
-	libraryMetadataFilename = "library.toml"
-	artistMetadataFilename  = "artist.toml"
-	albumMetadataFilename   = "album.toml"
+	libraryFilename = "library.toml"
+	artistFilename  = "artist.toml"
+	albumFilename   = "album.toml"
 )
 
-type LibraryMetadata struct {
-	ExcludedDirs []string `json:"excludedDirs" toml:"excludedDirs"`
+type LibraryConfig struct {
+	ExcludedDirs []string `toml:"excludedDirs"`
 
-	Path string `json:"-" toml:"-"`
+	Path string `toml:"-"`
 }
 
-type AlbumMetadataGeneral struct {
-	Cover     string   `json:"cover" toml:"cover"`
-	Tags      []string `json:"tags" toml:"tags"`
-	TrackTags []string `json:"trackTags" toml:"trackTags"`
-	Year      int64    `json:"year" toml:"year"`
+type AlbumGeneral struct {
+	Cover     string   `toml:"cover"`
+	Tags      []string `toml:"tags"`
+	TrackTags []string `toml:"trackTags"`
+	Year      int64    `toml:"year"`
 }
 
-type AlbumMetadataAlbum struct {
-	Id      string   `json:"id" toml:"id"`
-	Name    string   `json:"name" toml:"name"`
-	Year    int64    `json:"year" toml:"year"`
-	Tags    []string `json:"tags" toml:"tags"`
-	Artists []string `json:"artists" toml:"artists"`
+type AlbumAlbum struct {
+	Id      string   `toml:"id"`
+	Name    string   `toml:"name"`
+	Year    int64    `toml:"year"`
+	Tags    []string `toml:"tags"`
+	Artists []string `toml:"artists"`
 }
 
-type AlbumMetadataTrack struct {
-	Id      string   `json:"id" toml:"id"`
-	File    string   `json:"file" toml:"file"`
-	Name    string   `json:"name" toml:"name"`
-	Number  int64    `json:"number" toml:"number"`
-	Year    int64    `json:"year" toml:"year"`
-	Tags    []string `json:"tags" toml:"tags"`
-	Artists []string `json:"artists" toml:"artists"`
+type AlbumTrack struct {
+	Id      string   `toml:"id"`
+	File    string   `toml:"file"`
+	Name    string   `toml:"name"`
+	Number  int64    `toml:"number"`
+	Year    int64    `toml:"year"`
+	Tags    []string `toml:"tags"`
+	Artists []string `toml:"artists"`
 }
 
-// TODO(patrik): Rename
-type AlbumMetadata struct {
-	General AlbumMetadataGeneral `json:"general" toml:"general"`
-	Album   AlbumMetadataAlbum   `json:"album" toml:"album"`
-	Tracks  []AlbumMetadataTrack `json:"tracks" toml:"tracks"`
+type Album struct {
+	General AlbumGeneral `toml:"general"`
+	Album   AlbumAlbum   `toml:"album"`
+	Tracks  []AlbumTrack `toml:"tracks"`
 
-	Path string `json:"-" toml:"-"`
+	Path string `toml:"-"`
 }
 
-type ArtistMetadata struct {
-	Id string `json:"id" toml:"id"`
+type Artist struct {
+	Id string `toml:"id"`
 
-	SearchName string   `json:"searchName" toml:"searchName"`
-	Name       string   `json:"name" toml:"name"`
-	Cover      string   `json:"cover" toml:"cover"`
-	Tags       []string `json:"tags" toml:"tags"`
+	SearchName string   `toml:"searchName"`
+	Name       string   `toml:"name"`
+	Cover      string   `toml:"cover"`
+	Tags       []string `toml:"tags"`
 
-	Path string `json:"-" toml:"-"`
+	Path string `toml:"-"`
 }
