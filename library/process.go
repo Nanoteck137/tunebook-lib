@@ -98,7 +98,7 @@ func processAlbumMetadata(metadata *Album) {
 func ReadLibraryConfig(dir string) (LibraryConfig, error) {
 	var res LibraryConfig
 
-	p := filepath.Join(dir, libraryMetadataFilename)
+	p := filepath.Join(dir, libraryFilename)
 	res, err := utils.ReadToml[LibraryConfig](p)
 	if err == nil {
 		res.Path = dir
@@ -106,7 +106,7 @@ func ReadLibraryConfig(dir string) (LibraryConfig, error) {
 	}
 
 	if errors.Is(err, os.ErrNotExist) {
-		p, err := FindFile(dir, libraryMetadataFilename)
+		p, err := FindFile(dir, libraryFilename)
 		if err != nil {
 			return LibraryConfig{}, err
 		}
@@ -196,7 +196,7 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 		}
 
 		switch name {
-		case artistMetadataFilename:
+		case artistFilename:
 			artist, err := utils.ReadToml[Artist](p)
 			if err != nil {
 				reporter.AddWarning(p, fmt.Errorf("failed to read artist: %w", err))
@@ -210,7 +210,7 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 
 			artist.Path = p
 			res.artists = append(res.artists, artist)
-		case albumMetadataFilename:
+		case albumFilename:
 			album, err := utils.ReadToml[Album](p)
 			if err != nil {
 				reporter.AddWarning(p, fmt.Errorf("failed to read album: %w", err))
@@ -236,7 +236,7 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 }
 
 func validateArtistMetadata(artist *Artist, reporter *Reporter) bool {
-	file := filepath.Join(artist.Path, artistMetadataFilename)
+	file := filepath.Join(artist.Path, artistFilename)
 
 	valid := true
 	if artist.Id == "" {
@@ -272,7 +272,7 @@ func validateArtistMetadata(artist *Artist, reporter *Reporter) bool {
 }
 
 func validateAlbumMetadata(album *Album, reporter *Reporter) bool {
-	file := filepath.Join(album.Path, albumMetadataFilename)
+	file := filepath.Join(album.Path, albumFilename)
 
 	valid := true
 
@@ -556,7 +556,7 @@ func ProcessMusicLibrary(dir string) (*Library, error) {
 	}
 
 	for _, album := range fetched.albums {
-		file := filepath.Join(album.Path, albumMetadataFilename)
+		file := filepath.Join(album.Path, albumFilename)
 
 		processAlbumMetadata(&album)
 		valid := validateAlbumMetadata(&album, &lib.Reporter)

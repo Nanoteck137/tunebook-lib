@@ -46,8 +46,7 @@ type Album struct {
 }
 
 type Artist struct {
-	Id string `toml:"id"`
-
+	Id         string   `toml:"id"`
 	SearchName string   `toml:"searchName"`
 	Name       string   `toml:"name"`
 	Cover      string   `toml:"cover"`
