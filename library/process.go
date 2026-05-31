@@ -147,8 +147,9 @@ func FindFile(dir, filename string) (string, error) {
 }
 
 type fetchResult struct {
-	artists []Artist
-	albums  []Album
+	artists  []Artist
+	albums   []Album
+	tagFiles map[string]TagFile
 }
 
 func checkIfExcluded(relPath string, excludeDirs []string) bool {
@@ -165,10 +166,112 @@ func checkIfExcluded(relPath string, excludeDirs []string) bool {
 	return false
 }
 
+func getTargetMaps(tf TagFile, target TagTarget) map[string][]string {
+	maps := map[string][]string{}
+	for k, v := range tf.Maps {
+		maps[k] = v
+	}
+
+	switch target {
+	case TagTargetArtist:
+		for k, v := range tf.ArtistMaps {
+			maps[k] = v
+		}
+	case TagTargetAlbum:
+		for k, v := range tf.AlbumMaps {
+			maps[k] = v
+		}
+	case TagTargetTrack:
+		for k, v := range tf.TrackMaps {
+			maps[k] = v
+		}
+	}
+
+	return maps
+}
+
+func collectTagMaps(path string, tagMap map[string]TagFile, target TagTarget) map[string][]string {
+	maps := map[string][]string{}
+
+	if tf, ok := tagMap["."]; ok {
+		for k, v := range getTargetMaps(tf, target) {
+			maps[k] = v
+		}
+	}
+
+	parts := strings.Split(path, string(filepath.Separator))
+	for i := 0; i < len(parts); i++ {
+		dir := filepath.Join(parts[:i+1]...)
+		if tf, ok := tagMap[dir]; ok {
+			for k, v := range getTargetMaps(tf, target) {
+				maps[k] = v
+			}
+		}
+	}
+
+	return maps
+}
+
+func applyTagMaps(tags []string, maps map[string][]string) []string {
+	if len(maps) == 0 {
+		return tags
+	}
+
+	sluggedKeys := make(map[string][]string, len(maps))
+	for k, v := range maps {
+		sluggedKeys[utils.Slug(k)] = v
+	}
+
+	var result []string
+	for _, tag := range tags {
+		slugged := utils.Slug(strings.TrimSpace(tag))
+		if mapped, ok := sluggedKeys[slugged]; ok {
+			result = append(result, mapped...)
+		} else {
+			result = append(result, tag)
+		}
+	}
+
+	return result
+}
+
+func collectInheritedTags(path string, tagMap map[string]TagFile, target TagTarget) []string {
+	var tags []string
+
+	collect := func(tf TagFile) {
+		collected := append([]string{}, tf.Tags...)
+		switch target {
+		case TagTargetArtist:
+			collected = append(collected, tf.Artist...)
+		case TagTargetAlbum:
+			collected = append(collected, tf.Album...)
+		case TagTargetTrack:
+			collected = append(collected, tf.Track...)
+		}
+		collected = applyTagMaps(collected, getTargetMaps(tf, target))
+		tags = append(tags, collected...)
+	}
+
+	if tf, ok := tagMap["."]; ok {
+		collect(tf)
+	}
+
+	parts := strings.Split(path, string(filepath.Separator))
+	for i := 0; i < len(parts); i++ {
+		dir := filepath.Join(parts[:i+1]...)
+		if tf, ok := tagMap[dir]; ok {
+			collect(tf)
+		}
+	}
+
+	return tags
+}
+
 func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, error) {
 	res := &fetchResult{
-		artists: []Artist{},
-		albums:  []Album{},
+		artists:  []Artist{},
+		albums:   []Album{},
+		tagFiles: map[string]TagFile{},
 	}
 
 	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
@@ -224,6 +327,23 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 
 			album.Path = p
 			res.albums = append(res.albums, album)
+		case tagFilename:
+			tagFile, err := utils.ReadToml[TagFile](p)
+			if err != nil {
+				reporter.AddWarning(p, fmt.Errorf("failed to read tag file: %w", err))
+				return nil
+			}
+
+			if len(tagFile.Tags) == 0 && len(tagFile.Artist) == 0 && len(tagFile.Album) == 0 && len(tagFile.Track) == 0 {
+				reporter.AddWarning(p, errors.New("tags: no tags in file"))
+			}
+
+			relDir, err := filepath.Rel(dir, filepath.Dir(p))
+			if err != nil {
+				return err
+			}
+
+			res.tagFiles[relDir] = tagFile
 		}
 
 		return nil
@@ -486,6 +606,10 @@ func ProcessMusicLibrary(dir string) (*Library, error) {
 	artistMap := map[string]string{}
 
 	for _, artist := range fetched.artists {
+		inheritedTags := collectInheritedTags(artist.Path, fetched.tagFiles, TagTargetArtist)
+		tagMaps := collectTagMaps(artist.Path, fetched.tagFiles, TagTargetArtist)
+		artist.Tags = append(inheritedTags, applyTagMaps(artist.Tags, tagMaps)...)
+
 		processArtistMetadata(&artist)
 		valid := validateArtistMetadata(&artist, &lib.Reporter)
 
@@ -557,6 +681,20 @@ func ProcessMusicLibrary(dir string) (*Library, error) {
 
 	for _, album := range fetched.albums {
 		file := filepath.Join(album.Path, albumFilename)
+
+		albumMaps := collectTagMaps(album.Path, fetched.tagFiles, TagTargetAlbum)
+		trackMaps := collectTagMaps(album.Path, fetched.tagFiles, TagTargetTrack)
+
+		inheritedAlbumTags := collectInheritedTags(album.Path, fetched.tagFiles, TagTargetAlbum)
+		album.Album.Tags = append(inheritedAlbumTags, applyTagMaps(album.Album.Tags, albumMaps)...)
+		album.General.Tags = applyTagMaps(album.General.Tags, albumMaps)
+
+		inheritedTrackTags := collectInheritedTags(album.Path, fetched.tagFiles, TagTargetTrack)
+		album.General.TrackTags = append(inheritedTrackTags, applyTagMaps(album.General.TrackTags, trackMaps)...)
+
+		for i := range album.Tracks {
+			album.Tracks[i].Tags = applyTagMaps(album.Tracks[i].Tags, trackMaps)
+		}
 
 		processAlbumMetadata(&album)
 		valid := validateAlbumMetadata(&album, &lib.Reporter)

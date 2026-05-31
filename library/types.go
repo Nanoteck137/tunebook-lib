@@ -4,6 +4,7 @@ const (
 	libraryFilename = "library.toml"
 	artistFilename  = "artist.toml"
 	albumFilename   = "album.toml"
+	tagFilename     = "tag.toml"
 )
 
 type LibraryConfig struct {
@@ -11,6 +12,25 @@ type LibraryConfig struct {
 
 	Path string `toml:"-"`
 }
+
+type TagFile struct {
+	Tags       []string            `toml:"tags"`
+	Artist     []string            `toml:"artist"`
+	Album      []string            `toml:"album"`
+	Track      []string            `toml:"track"`
+	Maps       map[string][]string `toml:"map"`
+	ArtistMaps map[string][]string `toml:"mapArtist"`
+	AlbumMaps  map[string][]string `toml:"mapAlbum"`
+	TrackMaps  map[string][]string `toml:"mapTrack"`
+}
+
+type TagTarget string
+
+const (
+	TagTargetArtist TagTarget = "artist"
+	TagTargetAlbum  TagTarget = "album"
+	TagTargetTrack  TagTarget = "track"
+)
 
 type AlbumGeneral struct {
 	Cover     string   `toml:"cover"`
