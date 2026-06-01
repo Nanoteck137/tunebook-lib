@@ -136,7 +136,19 @@ func createTrackFromFile(dir, filename string) AlbumTrack {
 	}
 }
 
-func InitializeAlbum(dir string) error {
+type InitializeAlbumParams struct {
+	ZipFile string
+}
+
+func InitializeAlbum(dir string, params InitializeAlbumParams) error {
+	if params.ZipFile != "" {
+		fmt.Printf("Extracting tracks from %s...\n", params.ZipFile)
+		err := extractZip(params.ZipFile, dir)
+		if err != nil {
+			return fmt.Errorf("init album: extract zip: %w", err)
+		}
+	}
+
 	metadata := Album{}
 
 	entries, err := os.ReadDir(dir)
