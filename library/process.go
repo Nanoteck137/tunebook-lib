@@ -111,7 +111,7 @@ func ReadLibraryConfig(dir string) (LibraryConfig, error) {
 			return LibraryConfig{}, err
 		}
 
-		res, err := utils.ReadJson[LibraryConfig](p)
+		res, err := utils.ReadToml[LibraryConfig](p)
 		if err != nil {
 			return LibraryConfig{}, err
 		}
