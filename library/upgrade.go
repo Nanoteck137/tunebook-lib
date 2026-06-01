@@ -56,22 +56,20 @@ func extractZip(src, dest string) error {
 }
 
 type UpgradeAlbumParams struct {
-	SourceDir string
-	ZipFile   string
-	TargetDir string
+	Dir     string
+	ZipFile string
 }
 
 func UpgradeAlbum(params UpgradeAlbumParams) error {
 	if params.ZipFile != "" {
 		fmt.Printf("Extracting tracks from %s...\n", params.ZipFile)
-		err := extractZip(params.ZipFile, params.TargetDir)
+		err := extractZip(params.ZipFile, params.Dir)
 		if err != nil {
 			return fmt.Errorf("extract zip: %w", err)
 		}
 	}
 
-	albumPath := filepath.Join(params.SourceDir, albumFilename)
-	metadata, err := utils.ReadToml[Album](albumPath)
+	metadata, err := utils.ReadToml[Album](filepath.Join(params.Dir, albumFilename))
 	if err != nil {
 		return fmt.Errorf("read album: %w", err)
 	}
@@ -84,7 +82,7 @@ func UpgradeAlbum(params UpgradeAlbumParams) error {
 		}
 	}
 
-	entries, err := os.ReadDir(params.TargetDir)
+	entries, err := os.ReadDir(params.Dir)
 	if err != nil {
 		return fmt.Errorf("read dir: %w", err)
 	}
@@ -137,7 +135,7 @@ func UpgradeAlbum(params UpgradeAlbumParams) error {
 			usedNumbers[t.Number] = true
 			usedNames[matched.File] = true
 		} else {
-			p := filepath.Join(params.TargetDir, filename)
+			p := filepath.Join(params.Dir, filename)
 			info, _ := getTrackInfo(p)
 
 			name := info.Name
@@ -185,7 +183,7 @@ func UpgradeAlbum(params UpgradeAlbumParams) error {
 		return fmt.Errorf("marshal: %w", err)
 	}
 
-	out := filepath.Join(params.TargetDir, albumFilename)
+	out := filepath.Join(params.Dir, albumFilename)
 	err = os.WriteFile(out, data, 0644)
 	if err != nil {
 		return fmt.Errorf("write: %w", err)

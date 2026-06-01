@@ -9,18 +9,14 @@ import (
 )
 
 var upgradeCmd = &cobra.Command{
-	Use: "upgrade <SOURCE_DIR>",
-	Args: cobra.ExactArgs(1),
+	Use: "upgrade",
 	Run: func(cmd *cobra.Command, args []string) {
-		dir := args[0]
-
-		target, _ := cmd.Flags().GetString("target")
+		dir, _ := cmd.Flags().GetString("dir")
 		zipFile, _ := cmd.Flags().GetString("zip")
 
 		err := library.UpgradeAlbum(library.UpgradeAlbumParams{
-			SourceDir: dir,
-			ZipFile:   zipFile,
-			TargetDir: target,
+			Dir:     dir,
+			ZipFile: zipFile,
 		})
 		if err != nil {
 			slog.Error("failed to upgrade album", "err", err)
@@ -30,8 +26,8 @@ var upgradeCmd = &cobra.Command{
 }
 
 func init() {
-	upgradeCmd.Flags().String("target", ".", "target directory to write upgraded album.toml and scan for new tracks (defaults to --dir)")
-	upgradeCmd.MarkFlagDirname("target")
+	upgradeCmd.Flags().String("dir", ".", "directory containing album.toml and track files")
+	upgradeCmd.MarkFlagDirname("dir")
 
 	upgradeCmd.Flags().String("zip", "", "path to a zip file containing new tracks to extract")
 	upgradeCmd.MarkFlagFilename("zip", "zip")
