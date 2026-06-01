@@ -111,10 +111,33 @@ func getTrackInfo(p string) (trackInfo, error) {
 	return res, nil
 }
 
+func createTrackFromFile(dir, filename string) AlbumTrack {
+	p := filepath.Join(dir, filename)
+	info, _ := getTrackInfo(p)
+
+	if info.Name == "" {
+		info.Name = strings.TrimSuffix(filename, filepath.Ext(filename))
+	}
+
+	if info.Number == 0 {
+		info.Number = utils.ExtractNumber(filename)
+	}
+
+	artists := parseArtist(info.Artist)
+
+	return AlbumTrack{
+		Id:      utils.CreateTrackId(),
+		File:    filename,
+		Name:    info.Name,
+		Number:  int64(info.Number),
+		Year:    0,
+		Tags:    []string{},
+		Artists: artists,
+	}
+}
+
 func InitializeAlbum(dir string) error {
 	metadata := Album{}
-
-	extract := true
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -203,31 +226,7 @@ func InitializeAlbum(dir string) error {
 		filename := filepath.Base(p)
 		fmt.Printf("Found track: %s\n", filename)
 
-		trackInfo, err := getTrackInfo(p)
-		if err != nil {
-			return fmt.Errorf("init album: get track info %s: %w", p, err)
-		}
-
-		if trackInfo.Name == "" {
-			trackInfo.Name = strings.TrimSuffix(filename, filepath.Ext(p))
-		}
-
-		if trackInfo.Number == 0 || extract {
-			trackInfo.Number = utils.ExtractNumber(filename)
-		}
-
-		// TODO(patrik): If artist is empty then use album maybe
-		artists := parseArtist(trackInfo.Artist)
-
-		metadata.Tracks = append(metadata.Tracks, AlbumTrack{
-			Id:      utils.CreateTrackId(),
-			File:    filename,
-			Name:    trackInfo.Name,
-			Number:  int64(trackInfo.Number),
-			Year:    0,
-			Tags:    []string{},
-			Artists: artists,
-		})
+		metadata.Tracks = append(metadata.Tracks, createTrackFromFile(dir, filename))
 	}
 
 	data, err := toml.Marshal(&metadata)

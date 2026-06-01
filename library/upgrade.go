@@ -135,33 +135,7 @@ func UpgradeAlbum(params UpgradeAlbumParams) error {
 			usedNumbers[t.Number] = true
 			usedNames[matched.File] = true
 		} else {
-			p := filepath.Join(params.Dir, filename)
-			info, _ := getTrackInfo(p)
-
-			name := info.Name
-			if name == "" {
-				name = stem
-			}
-
-			artists := parseArtist(info.Artist)
-			if len(artists) == 0 && len(metadata.Album.Artists) > 0 {
-				artists = metadata.Album.Artists
-			}
-
-			year := int64(info.Year)
-			if year == 0 {
-				year = metadata.General.Year
-			}
-
-			t := AlbumTrack{
-				Id:      utils.CreateTrackId(),
-				File:    filename,
-				Name:    name,
-				Number:  int64(info.Number),
-				Year:    year,
-				Tags:    []string{},
-				Artists: artists,
-			}
+			t := createTrackFromFile(params.Dir, filename)
 			newTracks = append(newTracks, t)
 			if t.Number != 0 {
 				usedNumbers[t.Number] = true
