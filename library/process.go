@@ -488,7 +488,8 @@ func writeEntry(w io.Writer, entry any) error {
 }
 
 type UpdateLibraryOptions struct {
-	OnlyArtists bool
+	OnlyArtists      bool
+	SuppressWarnings bool
 }
 
 type UpdateResult struct {
@@ -565,7 +566,7 @@ func (lib *Library) WriteToDisk() error {
 	return nil
 }
 
-func ProcessMusicLibrary(dir string) (*Library, error) {
+func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error) {
 	libraryConfig, err := ReadLibraryConfig(dir)
 	if err != nil {
 		return nil, err
@@ -753,10 +754,27 @@ func ProcessMusicLibrary(dir string) (*Library, error) {
 	for _, file := range keys {
 		reports := lib.Reporter.Errors[file]
 
+		hasNonWarning := false
+		if opts.SuppressWarnings {
+			for _, r := range reports {
+				if !r.IsWarning {
+					hasNonWarning = true
+					break
+				}
+			}
+			if !hasNonWarning {
+				continue
+			}
+		}
+
 		color.Set(color.FgBlue)
 		fmt.Fprintln(os.Stderr, file)
 
 		for _, report := range reports {
+			if opts.SuppressWarnings && report.IsWarning {
+				continue
+			}
+
 			if report.IsWarning {
 				color.Set(color.FgYellow)
 				fmt.Fprintf(os.Stderr, " - warn:  ")
