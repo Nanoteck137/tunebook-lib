@@ -65,7 +65,9 @@ func parseArtist(s string) []string {
 		return []string{}
 	}
 
-	splits := strings.Split(s, ",")
+	splits := strings.FieldsFunc(s, func(r rune) bool {
+		return r == ',' || r == ';'
+	})
 
 	artists := make([]string, 0, len(splits))
 	for _, s := range splits {
