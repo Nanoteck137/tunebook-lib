@@ -415,6 +415,11 @@ func validateAlbumMetadata(album *Album, reporter *Reporter) bool {
 		}
 	}
 
+	if album.Album.Type == "" {
+		reporter.AddError(file, errors.New("album.type: type not set"))
+		valid = false
+	}
+
 	if album.Album.Year == 0 {
 		reporter.AddWarning(file, errors.New("album.year: year not set"))
 	}
