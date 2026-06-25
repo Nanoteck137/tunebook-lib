@@ -716,6 +716,7 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 				Name:               album.Album.Name,
 				CoverArt:           album.General.Cover,
 				Year:               album.Album.Year,
+				AlbumType:          album.Album.Type,
 				ArtistId:           artists.ArtistId,
 				FeaturingArtistIds: artists.FeaturingArtistIds,
 				Tags:               album.Album.Tags,
