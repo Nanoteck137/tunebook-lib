@@ -19,14 +19,17 @@ func FixAlbumType(dir string) error {
 			return err
 		}
 
-		if d.IsDir() {
-			if strings.HasPrefix(d.Name(), ".") {
-				return filepath.SkipDir
-			}
+		if d == nil {
 			return nil
 		}
 
-		if d.Name() != albumFilename {
+		name := d.Name()
+
+		if strings.HasPrefix(name, ".") {
+			return nil
+		}
+
+		if name != albumFilename {
 			return nil
 		}
 
