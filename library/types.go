@@ -40,11 +40,12 @@ type AlbumGeneral struct {
 }
 
 type AlbumAlbum struct {
-	Id      string   `toml:"id"`
-	Name    string   `toml:"name"`
-	Year    int64    `toml:"year"`
-	Tags    []string `toml:"tags"`
-	Artists []string `toml:"artists"`
+	Id      string    `toml:"id"`
+	Name    string    `toml:"name"`
+	Type    AlbumType `toml:"type"`
+	Year    int64     `toml:"year"`
+	Tags    []string  `toml:"tags"`
+	Artists []string  `toml:"artists"`
 }
 
 type AlbumTrack struct {

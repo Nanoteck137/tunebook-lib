@@ -198,7 +198,13 @@ func InitializeAlbum(dir string, params InitializeAlbumParams) error {
 		return fmt.Errorf("init album: probe track %s: %w", p, err)
 	}
 
+	metadata.Album.Type = AlbumTypeAlbum
+
 	isSingle := len(tracks) == 1
+
+	if isSingle {
+		metadata.Album.Type = AlbumTypeSingle
+	}
 
 	metadata.Album.Id = utils.CreateAlbumId()
 
