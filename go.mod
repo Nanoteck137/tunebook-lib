@@ -7,6 +7,7 @@ require (
 	github.com/gosimple/slug v1.15.0
 	github.com/maruel/natural v1.3.0
 	github.com/nanoteck137/pyrin v0.18.1
+	github.com/nanoteck137/validate v0.0.0-20241129211421-90ceb11de343
 	github.com/nrednav/cuid2 v1.1.0
 	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/spf13/cobra v1.10.2
