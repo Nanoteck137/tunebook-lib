@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -11,6 +12,7 @@ import (
 var fixCmd = &cobra.Command{
 	Use: "fix",
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("HELLO WORLD")
 		dir, _ := cmd.Flags().GetString("dir")
 
 		err := library.FixAlbumType(dir)
