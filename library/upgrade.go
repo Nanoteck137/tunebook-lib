@@ -26,7 +26,7 @@ func extractZip(src, dest string) error {
 		}
 
 		ext := filepath.Ext(f.Name)
-		if !utils.IsValidTrackExt(ext) {
+		if !utils.IsValidTrackExt(ext) && !utils.IsValidImageExt(ext) {
 			continue
 		}
 
@@ -88,6 +88,7 @@ func UpgradeAlbum(params UpgradeAlbumParams) error {
 	}
 
 	var newTrackFiles []string
+	var imageFiles []string
 	for _, e := range entries {
 		if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
 			continue
@@ -96,6 +97,13 @@ func UpgradeAlbum(params UpgradeAlbumParams) error {
 		if utils.IsValidTrackExt(ext) {
 			newTrackFiles = append(newTrackFiles, e.Name())
 		}
+		if utils.IsValidImageExt(ext) {
+			imageFiles = append(imageFiles, e.Name())
+		}
+	}
+
+	if len(imageFiles) > 0 {
+		metadata.General.Cover = imageFiles[0]
 	}
 
 	sort.Strings(newTrackFiles)
