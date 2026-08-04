@@ -30,6 +30,18 @@ func validateImage(p string) error {
 	return nil
 }
 
+var invalidFilenameChars = []rune{'/', '\\', ':', '*', '?', '"', '<', '>', '|', '!'}
+
+func validateFilename(name string) error {
+	for _, c := range invalidFilenameChars {
+		if strings.ContainsRune(name, c) {
+			return fmt.Errorf("filename contains invalid character %q", c)
+		}
+	}
+
+	return nil
+}
+
 func dedupStringArr(arr []string) []string {
 	seen := map[string]bool{}
 	res := make([]string, 0, len(arr))
@@ -441,6 +453,9 @@ func validateTrackMetadata(prefix, file string, track *AlbumTrack, reporter *Rep
 
 	if track.File == "" {
 		reporter.AddError(file, errors.New(prefix+".file"+": missing file"))
+		valid = false
+	} else if err := validateFilename(track.File); err != nil {
+		reporter.AddError(file, fmt.Errorf(prefix+".file"+": %w", err))
 		valid = false
 	}
 
