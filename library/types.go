@@ -14,7 +14,7 @@ type LibraryConfig struct {
 }
 
 type TagFile struct {
-	Tags       []string            `toml:"tags"`
+	All        []string            `toml:"all"`
 	Artist     []string            `toml:"artist"`
 	Album      []string            `toml:"album"`
 	Track      []string            `toml:"track"`

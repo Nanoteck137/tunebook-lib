@@ -336,3 +336,21 @@ func InitializeLibrary(dir string) error {
 
 	return nil
 }
+
+func InitializeTagFile(dir string) error {
+	metadata := TagFile{}
+
+	d, err := toml.Marshal(metadata)
+	if err != nil {
+		return fmt.Errorf("init tag file: marshal: %w", err)
+	}
+
+	// TODO(patrik): Move to constant
+	p := path.Join(dir, tagFilename)
+	err = os.WriteFile(p, d, 0644)
+	if err != nil {
+		return fmt.Errorf("init tag file: write file: %w", err)
+	}
+
+	return nil
+}

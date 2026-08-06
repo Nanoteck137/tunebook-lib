@@ -59,6 +59,19 @@ var initArtistCmd = &cobra.Command{
 	},
 }
 
+var initTagCmd = &cobra.Command{
+	Use: "tag",
+	Run: func(cmd *cobra.Command, args []string) {
+		dir, _ := cmd.Flags().GetString("dir")
+
+		err := library.InitializeTagFile(dir)
+		if err != nil {
+			slog.Error("failed to initialize tag file", "err", err)
+			os.Exit(1)
+		}
+	},
+}
+
 func init() {
 	initLibraryCmd.Flags().String("dir", ".", "directory to use")
 	initLibraryCmd.MarkFlagDirname("dir")
@@ -74,7 +87,10 @@ func init() {
 	initArtistCmd.Flags().String("cover-url", "", "url to image for downloading")
 	initArtistCmd.MarkFlagDirname("dir")
 
-	initCmd.AddCommand(initLibraryCmd, initAlbumCmd, initArtistCmd)
+	initTagCmd.Flags().String("dir", ".", "directory to use")
+	initTagCmd.MarkFlagDirname("dir")
+
+	initCmd.AddCommand(initLibraryCmd, initAlbumCmd, initArtistCmd, initTagCmd)
 
 	rootCmd.AddCommand(initCmd)
 }

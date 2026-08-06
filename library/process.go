@@ -251,7 +251,7 @@ func collectInheritedTags(path string, tagMap map[string]TagFile, target TagTarg
 	var tags []string
 
 	collect := func(tf TagFile) {
-		collected := append([]string{}, tf.Tags...)
+		collected := append([]string{}, tf.All...)
 		switch target {
 		case TagTargetArtist:
 			collected = append(collected, tf.Artist...)
@@ -269,7 +269,7 @@ func collectInheritedTags(path string, tagMap map[string]TagFile, target TagTarg
 	}
 
 	parts := strings.Split(path, string(filepath.Separator))
-	for i := 0; i < len(parts); i++ {
+	for i := range parts {
 		dir := filepath.Join(parts[:i+1]...)
 		if tf, ok := tagMap[dir]; ok {
 			collect(tf)
@@ -344,10 +344,6 @@ func fetch(dir string, excludeDirs []string, reporter *Reporter) (*fetchResult, 
 			if err != nil {
 				reporter.AddWarning(p, fmt.Errorf("failed to read tag file: %w", err))
 				return nil
-			}
-
-			if len(tagFile.Tags) == 0 && len(tagFile.Artist) == 0 && len(tagFile.Album) == 0 && len(tagFile.Track) == 0 {
-				reporter.AddWarning(p, errors.New("tags: no tags in file"))
 			}
 
 			relDir, err := filepath.Rel(dir, filepath.Dir(p))
