@@ -68,10 +68,11 @@ func downloadImage(url, dir, name, forceFormat string) (string, error) {
 			return "", fmt.Errorf("init artist: convert image: %w", err)
 		}
 	} else {
-		err = os.Rename(tmpFile.Name(), p)
+		err = copyFile(tmpFile.Name(), p)
 		if err != nil {
 			return "", fmt.Errorf("failed to save image: %w", err)
 		}
+		os.Remove(tmpFile.Name())
 	}
 
 	return p, nil
