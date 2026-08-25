@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"os"
 	"path"
@@ -19,40 +18,60 @@ import (
 )
 
 // TODO(patrik): Move?
-func downloadImage(url, dir, name string) (string, error) {
+func downloadImage(url, dir, name, forceFormat string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to send http request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	contentType := resp.Header.Get("Content-Type")
-	mediaType, _, err := mime.ParseMediaType(contentType)
+	tmpFile, err := os.CreateTemp("", "tunebook-download-*")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse media type: %w", err)
+		return "", fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	_, err = io.Copy(tmpFile, resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to download image: %w", err)
+	}
+	tmpFile.Close()
+
+	format, err := utils.GetImageFormat(tmpFile.Name())
+	if err != nil {
+		return "", fmt.Errorf("init artist: detect image format: %w", err)
 	}
 
-	// TODO(patrik): Add more types?
-	ext := ""
-	switch mediaType {
-	case "image/png":
-		ext = ".png"
-	case "image/jpeg":
-		ext = ".jpeg"
-	default:
-		return "", fmt.Errorf("unsupported media type: %s", mediaType)
+	targetFormat := forceFormat
+	if targetFormat == "" {
+		switch strings.ToLower(format) {
+		case "png":
+			targetFormat = "png"
+		case "jpeg", "jpg":
+			targetFormat = "jpeg"
+		default:
+			targetFormat = "png"
+		}
 	}
 
+	ext := utils.ImageFormatToExt(targetFormat)
 	p := path.Join(dir, name+ext)
-	f, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return "", fmt.Errorf("failed to open output file: %w", err)
-	}
-	defer f.Close()
 
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to copy http body to file: %w", err)
+	detectedLower := strings.ToLower(format)
+	formatMatchesTarget := (detectedLower == "png" && targetFormat == "png") ||
+		((detectedLower == "jpeg" || detectedLower == "jpg") && targetFormat == "jpeg")
+
+	if !formatMatchesTarget {
+		err = utils.ConvertImage(tmpFile.Name(), p)
+		if err != nil {
+			return "", fmt.Errorf("init artist: convert image: %w", err)
+		}
+	} else {
+		err = os.Rename(tmpFile.Name(), p)
+		if err != nil {
+			return "", fmt.Errorf("failed to save image: %w", err)
+		}
 	}
 
 	return p, nil
@@ -268,9 +287,10 @@ func InitializeAlbum(dir string, params InitializeAlbumParams) error {
 }
 
 type InitializeArtistParams struct {
-	ArtistName string
-	CoverUrl   string
-	NoCover    bool
+	ArtistName  string
+	CoverUrl    string
+	CoverFormat string
+	NoCover     bool
 }
 
 func InitializeArtist(dir string, params InitializeArtistParams) error {
@@ -292,7 +312,7 @@ func InitializeArtist(dir string, params InitializeArtistParams) error {
 	if params.CoverUrl != "" {
 		// TODO(patrik): I want a better setup to download images,
 		// where we also validate the images using magick
-		p, err := downloadImage(params.CoverUrl, dir, "cover")
+		p, err := downloadImage(params.CoverUrl, dir, "cover", params.CoverFormat)
 		if err != nil {
 			return fmt.Errorf("init artist: download cover: %w", err)
 		}

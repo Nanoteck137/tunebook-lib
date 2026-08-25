@@ -88,6 +88,16 @@ func CreateResizedImage(src string, dest string, width, height int) error {
 	return nil
 }
 
+func ConvertImage(src, dest string) error {
+	cmd := exec.Command("magick", src, dest)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to convert image: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+
+	return nil
+}
+
 func Slug(s string) string {
 	return slug.Make(s)
 }
