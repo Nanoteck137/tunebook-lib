@@ -49,10 +49,12 @@ var initArtistCmd = &cobra.Command{
 		dir, _ := cmd.Flags().GetString("dir")
 		artistName, _ := cmd.Flags().GetString("artist-name")
 		coverUrl, _ := cmd.Flags().GetString("cover-url")
+		noCover, _ := cmd.Flags().GetBool("no-cover")
 
 		err := library.InitializeArtist(dir, library.InitializeArtistParams{
 			ArtistName: artistName,
 			CoverUrl:   coverUrl,
+			NoCover:    noCover,
 		})
 		if err != nil {
 			slog.Error("failed to initialize artist", "err", err)
@@ -89,6 +91,7 @@ func init() {
 	initArtistCmd.Flags().String("dir", ".", "directory to use")
 	initArtistCmd.Flags().String("artist-name", "", "set the artist name (when empty it uses the directory name)")
 	initArtistCmd.Flags().String("cover-url", "", "url to image for downloading")
+	initArtistCmd.Flags().Bool("no-cover", false, "skip automatic cover image detection")
 	initArtistCmd.MarkFlagDirname("dir")
 
 	initTagCmd.Flags().String("dir", ".", "directory to use")

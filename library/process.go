@@ -22,9 +22,13 @@ import (
 )
 
 func validateImage(p string) error {
-	ext := filepath.Ext(p)
-	if !utils.IsValidImageExt(ext) {
-		return errors.New("image not valid file extention: " + ext)
+	ok, err := utils.IsValidImage(p)
+	if err != nil {
+		return fmt.Errorf("failed to validate image: %w", err)
+	}
+
+	if !ok {
+		return errors.New("not a valid image")
 	}
 
 	return nil

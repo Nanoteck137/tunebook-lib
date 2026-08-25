@@ -160,7 +160,6 @@ func InitializeAlbum(dir string, params InitializeAlbumParams) error {
 	}
 
 	var tracks []string
-	var images []string
 
 	for _, e := range entries {
 		if e.IsDir() {
@@ -180,10 +179,6 @@ func InitializeAlbum(dir string, params InitializeAlbumParams) error {
 
 		if utils.IsValidTrackExt(ext) {
 			tracks = append(tracks, p)
-		}
-
-		if utils.IsValidImageExt(ext) {
-			images = append(images, p)
 		}
 	}
 
@@ -209,9 +204,14 @@ func InitializeAlbum(dir string, params InitializeAlbumParams) error {
 
 	metadata.Album.Id = utils.CreateAlbumId()
 
+	images, err := utils.FindImagesInDir(dir)
+	if err != nil {
+		return fmt.Errorf("init album: find images: %w", err)
+	}
+
 	if len(images) > 0 {
 		// TODO(patrik): Better selection?
-		metadata.General.Cover = images[0]
+		metadata.General.Cover = filepath.Base(images[0])
 	}
 
 	metadata.General.Tags = params.Tags
@@ -270,6 +270,7 @@ func InitializeAlbum(dir string, params InitializeAlbumParams) error {
 type InitializeArtistParams struct {
 	ArtistName string
 	CoverUrl   string
+	NoCover    bool
 }
 
 func InitializeArtist(dir string, params InitializeArtistParams) error {
@@ -297,6 +298,31 @@ func InitializeArtist(dir string, params InitializeArtistParams) error {
 		}
 
 		cover = p
+	} else if !params.NoCover {
+		images, err := utils.FindImagesInDir(dir)
+		if err != nil {
+			return fmt.Errorf("init artist: find images: %w", err)
+		}
+
+		if len(images) > 0 {
+			src := images[0]
+
+			format, err := utils.GetImageFormat(src)
+			if err != nil {
+				return fmt.Errorf("init artist: get image format: %w", err)
+			}
+
+			ext := utils.ImageFormatToExt(format)
+			name := "cover" + ext
+			p := path.Join(dir, name)
+
+			err = copyFile(src, p)
+			if err != nil {
+				return fmt.Errorf("init artist: copy cover: %w", err)
+			}
+
+			cover = name
+		}
 	}
 
 	metadata := Artist{

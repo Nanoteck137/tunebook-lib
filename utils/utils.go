@@ -7,8 +7,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 	"unicode"
 
 	"github.com/gosimple/slug"
@@ -120,6 +122,70 @@ var validImageExts = []string{
 
 func IsValidImageExt(ext string) bool {
 	return slices.Contains(validImageExts, ext)
+}
+
+func IsValidImage(p string) (bool, error) {
+	cmd := exec.Command("magick", "identify", "-format", "%m", p)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, nil
+	}
+
+	format := strings.TrimSpace(string(output))
+	return format != "", nil
+}
+
+func GetImageFormat(p string) (string, error) {
+	cmd := exec.Command("magick", "identify", "-format", "%m", p)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to identify image: %w", err)
+	}
+
+	format := strings.TrimSpace(string(output))
+	if format == "" {
+		return "", fmt.Errorf("could not determine image format")
+	}
+
+	return format, nil
+}
+
+func ImageFormatToExt(format string) string {
+	switch strings.ToLower(format) {
+	case "png":
+		return ".png"
+	case "jpeg", "jpg":
+		return ".jpeg"
+	default:
+		return "." + strings.ToLower(format)
+	}
+}
+
+func FindImagesInDir(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var images []string
+	for _, e := range entries {
+		if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+
+		ext := filepath.Ext(e.Name())
+		if !IsValidImageExt(ext) {
+			continue
+		}
+
+		p := filepath.Join(dir, e.Name())
+		ok, _ := IsValidImage(p)
+		if ok {
+			images = append(images, p)
+		}
+	}
+
+	return images, nil
 }
 
 // TODO(patrik): Update this
