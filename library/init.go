@@ -140,6 +140,7 @@ func createTrackFromFile(dir, filename string) AlbumTrack {
 
 type InitializeAlbumParams struct {
 	ZipFile string
+	Tags    []string
 }
 
 func InitializeAlbum(dir string, params InitializeAlbumParams) error {
@@ -212,6 +213,8 @@ func InitializeAlbum(dir string, params InitializeAlbumParams) error {
 		// TODO(patrik): Better selection?
 		metadata.General.Cover = images[0]
 	}
+
+	metadata.General.Tags = params.Tags
 
 	if !isSingle {
 		metadata.Album.Name, _ = probe.Tags.GetString("album")

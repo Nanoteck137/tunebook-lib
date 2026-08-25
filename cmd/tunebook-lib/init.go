@@ -30,9 +30,11 @@ var initAlbumCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		dir, _ := cmd.Flags().GetString("dir")
 		zipFile, _ := cmd.Flags().GetString("zip")
+		tags, _ := cmd.Flags().GetStringSlice("tags")
 
 		err := library.InitializeAlbum(dir, library.InitializeAlbumParams{
 			ZipFile: zipFile,
+			Tags:    tags,
 		})
 		if err != nil {
 			slog.Error("failed to initialize album", "err", err)
@@ -81,6 +83,8 @@ func init() {
 
 	initAlbumCmd.Flags().String("zip", "", "path to a zip file containing tracks to extract")
 	initAlbumCmd.MarkFlagFilename("zip", "zip")
+
+	initAlbumCmd.Flags().StringSlice("tags", []string{}, "tags to set on the album")
 
 	initArtistCmd.Flags().String("dir", ".", "directory to use")
 	initArtistCmd.Flags().String("artist-name", "", "set the artist name (when empty it uses the directory name)")
