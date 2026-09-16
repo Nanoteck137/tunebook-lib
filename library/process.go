@@ -650,7 +650,7 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 				timer.Start()
 
 				p := filepath.Join(lib.Path, artist.Path, artist.Cover)
-				err := utils.GenerateBlurhashFile(p)
+				_, err := utils.GenerateBlurhashFile(p)
 				if err != nil {
 					lib.Reporter.AddWarning(filepath.Join(artist.Path, artistFilename), fmt.Errorf("cover: failed to generate blurhash: %w", err))
 				}
@@ -741,18 +741,27 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 		}
 
 		if valid {
+			var coverArtBlurhash string
 			if album.General.Cover != "" {
+				timer := timer.Simple{}
+				timer.Start()
+
 				p := filepath.Join(lib.Path, album.Path, album.General.Cover)
-				err := utils.GenerateBlurhashFile(p)
+				hash, err := utils.GenerateBlurhashFile(p)
 				if err != nil {
 					lib.Reporter.AddWarning(file, fmt.Errorf("album.cover: failed to generate blurhash: %w", err))
 				}
+
+				coverArtBlurhash = hash
+
+				timing.BlurhashGeneration += timer.Stop()
 			}
 
 			lib.Albums = append(lib.Albums, AlbumEntry{
 				Id:                 album.Album.Id,
 				Name:               album.Album.Name,
 				CoverArt:           album.General.Cover,
+				CoverArtBlurhash:   coverArtBlurhash,
 				Year:               album.Album.Year,
 				AlbumType:          album.Album.Type,
 				ArtistId:           artists.ArtistId,

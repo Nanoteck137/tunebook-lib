@@ -55,6 +55,7 @@ type AlbumEntry struct {
 	Id                 string    `json:"id"`
 	Name               string    `json:"name"`
 	CoverArt           string    `json:"coverArt"`
+	CoverArtBlurhash   string    `json:"coverArtBlurhash"`
 	Year               int64     `json:"year"`
 	AlbumType          AlbumType `json:"albumType"`
 	ArtistId           string    `json:"artistId"`

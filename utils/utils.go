@@ -102,35 +102,35 @@ func ConvertImage(src, dest string) error {
 	return nil
 }
 
-func GenerateBlurhashFile(p string) error {
+func GenerateBlurhashFile(p string) (string, error) {
 	blurhashPath := p + ".blurhash"
-	if _, err := os.Stat(blurhashPath); err == nil {
-		return nil
+	if d, err := os.ReadFile(blurhashPath); err == nil {
+		return strings.TrimSpace(string(d)), nil
 	}
 
 	f, err := os.Open(p)
 	if err != nil {
-		return fmt.Errorf("open image: %w", err)
+		return "", fmt.Errorf("open image: %w", err)
 	}
 	defer f.Close()
 
 	img, _, err := image.Decode(f)
 	if err != nil {
-		return fmt.Errorf("decode image: %w", err)
+		return "", fmt.Errorf("decode image: %w", err)
 	}
 
 	// TODO(patrik): Add constants for the X, Y
 	hash, err := blurhash.Encode(4, 4, img)
 	if err != nil {
-		return fmt.Errorf("encode blurhash: %w", err)
+		return "", fmt.Errorf("encode blurhash: %w", err)
 	}
 
 	err = os.WriteFile(blurhashPath, []byte(hash), 0644)
 	if err != nil {
-		return fmt.Errorf("write blurhash file: %w", err)
+		return "", fmt.Errorf("write blurhash file: %w", err)
 	}
 
-	return nil
+	return hash, nil
 }
 
 func Slug(s string) string {
