@@ -3,7 +3,6 @@ module github.com/nanoteck137/tunebooklib
 go 1.25.0
 
 require (
-	github.com/bbrks/go-blurhash v1.2.0
 	github.com/fatih/color v1.19.0
 	github.com/gosimple/slug v1.15.0
 	github.com/maruel/natural v1.3.0

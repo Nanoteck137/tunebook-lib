@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
-	_ "image/jpeg"
-	_ "image/png"
 	"log"
 	"os"
 	"os/exec"
@@ -16,7 +13,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/bbrks/go-blurhash"
 	"github.com/gosimple/slug"
 	"github.com/nrednav/cuid2"
 	"github.com/pelletier/go-toml/v2"
@@ -100,37 +96,6 @@ func ConvertImage(src, dest string) error {
 	}
 
 	return nil
-}
-
-func GenerateBlurhashFile(p string) (string, error) {
-	blurhashPath := p + ".blurhash"
-	if d, err := os.ReadFile(blurhashPath); err == nil {
-		return strings.TrimSpace(string(d)), nil
-	}
-
-	f, err := os.Open(p)
-	if err != nil {
-		return "", fmt.Errorf("open image: %w", err)
-	}
-	defer f.Close()
-
-	img, _, err := image.Decode(f)
-	if err != nil {
-		return "", fmt.Errorf("decode image: %w", err)
-	}
-
-	// TODO(patrik): Add constants for the X, Y
-	hash, err := blurhash.Encode(4, 4, img)
-	if err != nil {
-		return "", fmt.Errorf("encode blurhash: %w", err)
-	}
-
-	err = os.WriteFile(blurhashPath, []byte(hash), 0644)
-	if err != nil {
-		return "", fmt.Errorf("write blurhash file: %w", err)
-	}
-
-	return hash, nil
 }
 
 func Slug(s string) string {

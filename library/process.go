@@ -582,10 +582,6 @@ func (lib *Library) WriteToDisk() error {
 	return nil
 }
 
-type Timing struct {
-	BlurhashGeneration time.Duration
-}
-
 func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error) {
 	libraryConfig, err := ReadLibraryConfig(dir)
 	if err != nil {
@@ -602,8 +598,6 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 		Albums:  []AlbumEntry{},
 		Tracks:  []TrackEntry{},
 	}
-
-	timing := Timing{}
 
 	fetchingTimer := timer.Simple{}
 	processingTimer := timer.Simple{}
@@ -644,19 +638,6 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 			}
 
 			artistMap[artist.SearchName] = artist.Id
-
-			if artist.Cover != "" {
-				timer := timer.Simple{}
-				timer.Start()
-
-				p := filepath.Join(lib.Path, artist.Path, artist.Cover)
-				_, err := utils.GenerateBlurhashFile(p)
-				if err != nil {
-					lib.Reporter.AddWarning(filepath.Join(artist.Path, artistFilename), fmt.Errorf("cover: failed to generate blurhash: %w", err))
-				}
-
-				timing.BlurhashGeneration += timer.Stop()
-			}
 
 			lib.Artists = append(lib.Artists, ArtistEntry{
 				Id:       artist.Id,
@@ -741,27 +722,10 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 		}
 
 		if valid {
-			var coverArtBlurhash string
-			if album.General.Cover != "" {
-				timer := timer.Simple{}
-				timer.Start()
-
-				p := filepath.Join(lib.Path, album.Path, album.General.Cover)
-				hash, err := utils.GenerateBlurhashFile(p)
-				if err != nil {
-					lib.Reporter.AddWarning(file, fmt.Errorf("album.cover: failed to generate blurhash: %w", err))
-				}
-
-				coverArtBlurhash = hash
-
-				timing.BlurhashGeneration += timer.Stop()
-			}
-
 			lib.Albums = append(lib.Albums, AlbumEntry{
 				Id:                 album.Album.Id,
 				Name:               album.Album.Name,
 				CoverArt:           album.General.Cover,
-				CoverArtBlurhash:   coverArtBlurhash,
 				Year:               album.Album.Year,
 				AlbumType:          album.Album.Type,
 				ArtistId:           artists.ArtistId,
@@ -868,8 +832,6 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 	fmt.Printf(" Total: %v\n", total)
 	fmt.Printf(" Fetching: %v\n", fetchingTimer.Duration())
 	fmt.Printf(" Processing: %v\n", processingTimer.Duration())
-	fmt.Printf(" ----")
-	fmt.Printf(" Blurhash Gen: %v\n", timing.BlurhashGeneration)
 
 	color.Unset()
 
