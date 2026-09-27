@@ -107,6 +107,53 @@ func processAlbumMetadata(metadata *Album) {
 	}
 }
 
+// calculateAlbumPositions returns the position each track should have within
+// the album, which is used to order the tracks. Every track gets a unique
+// position, tracks are ordered by their number, and tracks sharing a number or
+// missing one are ordered by how they are listed in the album.
+func calculateAlbumPositions(tracks []AlbumTrack) []int64 {
+	numbers := []int64{}
+	counts := map[int64]int64{}
+
+	for _, track := range tracks {
+		if track.Number <= 0 {
+			continue
+		}
+
+		if _, ok := counts[track.Number]; !ok {
+			numbers = append(numbers, track.Number)
+		}
+
+		counts[track.Number]++
+	}
+
+	slices.Sort(numbers)
+
+	position := int64(1)
+	nextPosition := map[int64]int64{}
+
+	for _, number := range numbers {
+		nextPosition[number] = position
+		position += counts[number]
+	}
+
+	unnumbered := position
+	positions := make([]int64, len(tracks))
+
+	for i, track := range tracks {
+		if track.Number <= 0 {
+			positions[i] = unnumbered
+			unnumbered++
+			continue
+		}
+
+		positions[i] = nextPosition[track.Number]
+		nextPosition[track.Number]++
+	}
+
+	return positions
+}
+
 func ReadLibraryConfig(dir string) (LibraryConfig, error) {
 	var res LibraryConfig
 
@@ -735,6 +782,8 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 			})
 		}
 
+		albumPositions := calculateAlbumPositions(album.Tracks)
+
 		for i, track := range album.Tracks {
 			prefix := fmt.Sprintf("album.tracks[%d]", i)
 			trackValid := validateTrackMetadata(prefix, file, &track, &lib.Reporter)
@@ -749,6 +798,7 @@ func ProcessMusicLibrary(dir string, opts UpdateLibraryOptions) (*Library, error
 					Id:                 track.Id,
 					TrackFile:          track.File,
 					Name:               track.Name,
+					AlbumPosition:      albumPositions[i],
 					Number:             track.Number,
 					Year:               track.Year,
 					Tags:               track.Tags,

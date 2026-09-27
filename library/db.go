@@ -99,6 +99,7 @@ type TrackEntry struct {
 	Id                 string   `json:"id"`
 	Name               string   `json:"name"`
 	TrackFile          string   `json:"trackFile"`
+	AlbumPosition      int64    `json:"albumPosition"`
 	Number             int64    `json:"number"`
 	Year               int64    `json:"year"`
 	Tags               []string `json:"tags"`
